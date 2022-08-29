@@ -8,16 +8,20 @@ export default async function handler(request, response) {
         return;
     }
 
-    const { browser, page } = await createBrowserInstance(
-        url.startsWith("http") ? url : "https://" + url
-    );
+    try {
+        const { browser, page } = await createBrowserInstance(
+            url.startsWith("http") ? url : "https://" + url
+        );
 
-    response
-        .status(200)
-        .setHeader("Content-Type", "image/png")
-        .end(await page.screenshot({ type: "png" }));
+        response
+            .status(200)
+            .setHeader("Content-Type", "image/png")
+            .end(await page.screenshot({ type: "png" }));
 
-    await browser.close();
+        await browser.close();
+    } catch (e) {
+        response.status(500).send(e.message);
+    }
 }
 
 async function createBrowserInstance(url) {
@@ -31,7 +35,13 @@ async function createBrowserInstance(url) {
     });
 
     const page = await browser.newPage();
-    await page.goto(url);
+
+    try {
+        await page.goto(url);
+    } catch (e) {
+        browser.close();
+        throw new Error("[error] are you sure the url is valid?");
+    }
 
     return { browser, page };
 }
