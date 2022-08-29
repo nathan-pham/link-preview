@@ -1,4 +1,5 @@
-import puppeteer from "puppeteer";
+import chromium from "chrome-aws-lambda";
+import playwright from "playwright-core";
 
 export default async function handler(request, response) {
     const url = request.query.url;
@@ -15,6 +16,7 @@ export default async function handler(request, response) {
 
         response
             .status(200)
+            .setHeader("Cache-Control", "s-maxage=31536000, public")
             .setHeader("Content-Type", "image/png")
             .end(await page.screenshot({ type: "png" }));
 
@@ -25,15 +27,20 @@ export default async function handler(request, response) {
 }
 
 async function createBrowserInstance(url) {
-    const browser = await puppeteer.launch({
+    const options = {
+        args: chromium.args,
         headless: true,
-        defaultViewport: {
-            width: 1280,
+        executablePath:
+            process.env.NODE_ENV !== "development"
+                ? await chromium.executablePath
+                : `C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe`,
+        viewport: {
+            width: 1200,
             height: 720,
         },
-        ignoreHTTPSErrors: true,
-    });
+    };
 
+    const browser = await playwright.chromium.launch(options);
     const page = await browser.newPage();
 
     try {
