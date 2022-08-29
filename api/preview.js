@@ -28,8 +28,16 @@ export default async function handler(request, response) {
 
 async function createBrowserInstance(url) {
     const options = {
-        args: chromium.args,
-        headless: true,
+        args: [
+            ...(chrome.args || []),
+            "--hide-scrollbars",
+            "--disable-web-security",
+            "--no-sandbox",
+            "--single-process",
+            "--no-zygote",
+            "--disable-setuid-sandbox",
+        ],
+        ignoreDefaultArgs: ["--disable-extensions"],
         executablePath:
             process.env.NODE_ENV !== "development"
                 ? await chromium.executablePath
@@ -38,6 +46,8 @@ async function createBrowserInstance(url) {
             width: 1200,
             height: 720,
         },
+        headless: true,
+        ignoreHTTPSErrors: true,
     };
 
     const browser = await playwright.chromium.launch(options);
@@ -52,3 +62,6 @@ async function createBrowserInstance(url) {
 
     return { browser, page };
 }
+
+let chrome = {};
+let puppeteer;
